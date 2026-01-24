@@ -19,48 +19,113 @@ Key features include creative software solutions to overcome hardware limitation
 The system is built on **Proxmox VE**, utilizing a containerized (LXC + Docker) environment.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#007ACC', 'edgeLabelBackground':'#ffffff', 'tertiaryColor': '#F0F0F0'}}}%%
 graph TD
-    subgraph Host [Laptop: Dynabook Portégé X30-F]
-        PVE[Proxmox VE 8 Host]
-        
-        subgraph LXC_Monitor [LXC 102: Monitor]
-            Glances[Glances]
-            Kuma[Uptime Kuma]
-            Scrutiny[Scrutiny SMART]
-        end
-        
-        subgraph LXC_Docker [LXC 101: Docker Host]
-            Portainer[Portainer]
-            Immich[Immich Photo + AI]
-            Nextcloud[Nextcloud]
-            n8n[n8n Automation]
-            Ollama[Ollama LLM]
-        end
-        
-        STORAGE[(External SSD 1TB)]
+    %% --- STYLING DEFINITIONS ---
+    classDef user fill:#FFD700,stroke:#333,stroke-width:2px,color:black;
+    classDef netService fill:#FF9900,stroke:#333,stroke-width:2px,color:white,stroke-dasharray: 5 5;
+    classDef physical fill:#E6E6E6,stroke:#333,stroke-width:3px;
+    classDef hypervisor fill:#CCE5FF,stroke:#007ACC,stroke-width:2px;
+    classDef container fill:#D4EDDA,stroke:#28a745,stroke-width:2px;
+    classDef app fill:#FFFFFF,stroke:#007ACC,stroke-width:1px;
+    classDef storage fill:#FFE5CC,stroke:#D9534F,stroke-width:3px,shape:cylinder;
+    classDef hardware fill:#E1D5E7,stroke:#9673A6,stroke-width:2px;
+
+    %% --- EXTERNAL ACTORS & NETWORKING ---
+    User((Admin / User)):::user
+    
+    subgraph Public_Access [Internet / Zero Trust]
+        CF{{Cloudflare Tunnel}}:::netService
+    end
+    
+    subgraph Secure_Access [VPN / SD-WAN]
+        Meshnet{{NordVPN Meshnet}}:::netService
     end
 
-    User((User / Admin))
-    Cloudflare[Cloudflare Tunnel]
-    NordVPN[NordVPN Meshnet]
+    User == "Public URL (HTTPS/443)" ==> CF
+    User -- "Encrypted Tunnel (NordLynx)" --> Meshnet
 
-    User -->|Public URL| Cloudflare
-    User -->|Private Access| NordVPN
-    Cloudflare --> LXC_Docker
-    NordVPN --> PVE
-    LXC_Docker -->|Bind Mount| STORAGE
-    LXC_Monitor -->|Host PID| PVE
-```
+    %% --- PHYSICAL HOST LAYER ---
+    subgraph Dynabook_Host [💻 Physical Layer: Laptop Host]
+        class Dynabook_Host physical
+
+        subgraph Hardware_Resources [Hardware Resources]
+            iGPU[Intel UHD 620 iGPU]:::hardware
+        end
+
+        %% --- STORAGE LAYER ---
+        subgraph Storage_Layer [Storage Drives]
+            NVMe[(System NVMe SSD)]:::storage
+            ExtSSD[(1TB External Data SSD)]:::storage
+        end
+
+        %% --- HYPERVISOR LAYER ---
+        subgraph PVE_Host [☁️ Hypervisor: Proxmox VE 8]
+            class PVE_Host hypervisor
+            PVE_Shell[Proxmox Shell]:::app
+
+            %% --- LXC: MONITORING ---
+            subgraph LXC102 [LXC 102: Monitor Stack]
+                class LXC102 container
+                Glances["Glances (Host PID)"]:::app
+                Scrutiny["Scrutiny (SMART)"]:::app
+                Kuma[Uptime Kuma]:::app
+            end
+
+            %% --- LXC: DOCKER HOST ---
+            subgraph LXC101 [LXC 101: Docker Host]
+                class LXC101 container
+                
+                subgraph Docker_Apps [🐳 Docker Apps]
+                    Portainer["Portainer"]:::app
+                    Nextcloud["Nextcloud"]:::app
+                    n8n["n8n (Automation)"]:::app
+                    Immich_Srv[Immich Server]:::app
+                    Immich_ML["Immich ML"]:::app
+                    Ollama[Ollama LLM]:::app
+                    WebUI[Open WebUI]:::app
+                end
+            end
+        end
+    end
+
+    %% --- CONNECTIONS ---
+
+    %% Networking Ingress
+    CF -- "Tunnel" --> Nextcloud
+    CF -- "Tunnel" --> Immich_Srv
+    CF -- "Tunnel" --> n8n
+    CF -- "Tunnel" --> WebUI
+    Meshnet -- "SSH Access" --> PVE_Shell
+
+    %% Storage Connections
+    ExtSSD == "Bind Mount" ===> Immich_Srv
+    ExtSSD == "Bind Mount" ===> Nextcloud
+    NVMe -.-> PVE_Shell
+
+    %% Hardware Acceleration
+    iGPU == "QuickSync /dev/dri" ===> Immich_ML
+    iGPU == "OpenCL /dev/dri" ===> Ollama
+
+    %% Internal Comms
+    WebUI -- "API" --> Ollama
+    Immich_Srv -- "API" --> Immich_ML
+
+    %% Monitoring
+    Glances -. "Monitor" .-> PVE_Shell
+    Scrutiny -. "Read SMART" .-> ExtSSD
+    Scrutiny -. "Read SMART" .-> NVMe
+    Kuma -. "APIvailability Check" .-> Docker_Apps```
 
 ## ⚙️ Hardware Specifications
 
 The server runs on a repurposed business ultrabook acting as a host with a built-in UPS (battery).
-|‎ **Component**‎‎‎ | **Specification**
-|‎ **Device** ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎‎  ‎ ‎| Dynabook Portégé X30-F
-|‎ **CPU**‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ | Intel Core i5-8265U (4C/8T)
-|‎ **RAM** ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ | 16 GB DDR4
-|‎ **Storage 1**‎ ‎ ‎ ‎ ‎ ‎ | 256 GB NVMe
-|‎ **Storage 2** ‎ ‎ ‎ ‎ ‎ | 1 TB Samsung 860 EVO (USB)
+|‎ **Component**‎‎‎ - **Specification**
+|‎ **Device** - Dynabook Portégé X30-F
+|‎ **CPU** - Intel Core i5-8265U (4C/8T)
+|‎ **RAM** - 16 GB DDR4
+|‎ **Internal Storage**‎ - 256 GB NVMe
+|‎ **External Storage** - 1 TB Samsung 860 EVO (USB)
 
 
 
