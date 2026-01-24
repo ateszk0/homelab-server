@@ -19,103 +19,120 @@ Key features include creative software solutions to overcome hardware limitation
 The system is built on **Proxmox VE**, utilizing a containerized (LXC + Docker) environment.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#007ACC', 'edgeLabelBackground':'#ffffff', 'tertiaryColor': '#F0F0F0'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'mainBkg': '#ffffff', 'clusterBkg': '#ffffff', 'primaryColor': '#007ACC', 'edgeLabelBackground':'#ffffff', 'tertiaryColor': '#F9F9F9', 'fontFamily': 'arial'}}}%%
 graph TD
-    %% --- STYLING DEFINITIONS ---
+    %% --- STÍLUS DEFINÍCIÓK ---
     classDef user fill:#FFD700,stroke:#333,stroke-width:2px,color:black;
     classDef netService fill:#FF9900,stroke:#333,stroke-width:2px,color:white,stroke-dasharray: 5 5;
-    classDef physical fill:#E6E6E6,stroke:#333,stroke-width:3px;
-    classDef hypervisor fill:#CCE5FF,stroke:#007ACC,stroke-width:2px;
-    classDef container fill:#D4EDDA,stroke:#28a745,stroke-width:2px;
-    classDef app fill:#FFFFFF,stroke:#007ACC,stroke-width:1px;
+    classDef physical fill:#F4F4F4,stroke:#666,stroke-width:2px,stroke-dasharray: 2 2;
+    classDef hypervisor fill:#E6F2FF,stroke:#007ACC,stroke-width:2px;
+    classDef container fill:#E8F5E9,stroke:#28a745,stroke-width:2px;
+    classDef app fill:#FFFFFF,stroke:#007ACC,stroke-width:1px,rx:5,ry:5;
     classDef storage fill:#FFE5CC,stroke:#D9534F,stroke-width:3px,shape:cylinder;
     classDef hardware fill:#E1D5E7,stroke:#9673A6,stroke-width:2px;
 
-    %% --- EXTERNAL ACTORS & NETWORKING ---
+    %% --- 1. SZINT: FELHASZNÁLÓK ---
     User((Admin / User)):::user
     
-    subgraph Public_Access [Internet / Zero Trust]
+    subgraph Network_Layer [🌐 Network Access Layer]
+        direction TB
         CF{{Cloudflare Tunnel}}:::netService
-    end
-    
-    subgraph Secure_Access [VPN / SD-WAN]
         Meshnet{{NordVPN Meshnet}}:::netService
     end
 
-    User == "Public URL (HTTPS/443)" ==> CF
-    User -- "Encrypted Tunnel (NordLynx)" --> Meshnet
-
-    %% --- PHYSICAL HOST LAYER ---
-    subgraph Dynabook_Host [💻 Physical Layer: Laptop Host]
+    %% --- 2. SZINT: FIZIKAI GÉP ---
+    subgraph Dynabook_Host [💻 Physical Host: Dynabook Laptop]
         class Dynabook_Host physical
 
-        subgraph Hardware_Resources [Hardware Resources]
-            iGPU[Intel UHD 620 iGPU]:::hardware
-        end
-
-        %% --- STORAGE LAYER ---
-        subgraph Storage_Layer [Storage Drives]
-            NVMe[(System NVMe SSD)]:::storage
-            ExtSSD[(1TB External Data SSD)]:::storage
-        end
-
-        %% --- HYPERVISOR LAYER ---
-        subgraph PVE_Host [☁️ Hypervisor: Proxmox VE 8]
+        %% --- 3. SZINT: VIRTUALIZÁCIÓ ---
+        subgraph PVE_Host [☁️ Proxmox VE 8]
             class PVE_Host hypervisor
             PVE_Shell[Proxmox Shell]:::app
 
-            %% --- LXC: MONITORING ---
-            subgraph LXC102 [LXC 102: Monitor Stack]
+            %% BAL OLDAL: MONITORING
+            subgraph LXC102 [LXC 102: Monitor]
                 class LXC102 container
-                Glances["Glances (Host PID)"]:::app
-                Scrutiny["Scrutiny (SMART)"]:::app
                 Kuma[Uptime Kuma]:::app
+                Glances[Glances]:::app
+                Scrutiny[Scrutiny]:::app
             end
 
-            %% --- LXC: DOCKER HOST ---
+            %% JOBB OLDAL: DOCKER APPOK
             subgraph LXC101 [LXC 101: Docker Host]
                 class LXC101 container
                 
-                subgraph Docker_Apps [🐳 Docker Apps]
-                    Portainer["Portainer"]:::app
-                    Nextcloud["Nextcloud"]:::app
-                    n8n["n8n (Automation)"]:::app
+                subgraph Apps_General [Produktivitás]
+                    Portainer:::app
+                    Nextcloud:::app
+                    n8n:::app
+                end
+
+                subgraph Apps_AI [Media & AI]
                     Immich_Srv[Immich Server]:::app
-                    Immich_ML["Immich ML"]:::app
-                    Ollama[Ollama LLM]:::app
+                    Immich_ML[Immich ML]:::app
                     WebUI[Open WebUI]:::app
+                    Ollama:::app
                 end
             end
         end
+
+        %% --- 4. SZINT: HARDVER (Legalul) ---
+        subgraph Hardware_Layer [⚙️ Hardware & Storage]
+            direction LR
+            iGPU[Intel UHD 620 iGPU]:::hardware
+            NVMe[(System NVMe)]:::storage
+            ExtSSD[(1TB External SSD)]:::storage
+        end
     end
 
-    %% --- CONNECTIONS ---
+    %% ==========================================================
+    %% KAPCSOLATOK (A sorrend fontos a színezéshez!)
+    %% ==========================================================
 
-    %% Networking Ingress
-    CF -- "Tunnel" --> Nextcloud
-    CF -- "Tunnel" --> Immich_Srv
-    CF -- "Tunnel" --> n8n
-    CF -- "Tunnel" --> WebUI
-    Meshnet -- "SSH Access" --> PVE_Shell
+    %% 1. CSOPORT: FELHASZNÁLÓI BELÉPÉS (Fekete/Szürke)
+    User == "HTTPS" ==> CF
+    User -- "VPN" --> Meshnet
 
-    %% Storage Connections
-    ExtSSD == "Bind Mount" ===> Immich_Srv
-    ExtSSD == "Bind Mount" ===> Nextcloud
-    NVMe -.-> PVE_Shell
+    %% 2. CSOPORT: HÁLÓZATI FORGALOM (KÉK - Blue) 🔵
+    CF --> Nextcloud
+    CF --> Immich_Srv
+    CF --> n8n
+    CF --> WebUI
+    Meshnet -.-> PVE_Shell
 
-    %% Hardware Acceleration
-    iGPU == "QuickSync /dev/dri" ===> Immich_ML
-    iGPU == "OpenCL /dev/dri" ===> Ollama
+    %% 3. CSOPORT: ADATTÁROLÁS (PIROS - Red) 🔴
+    %% Vastag nyilak jelzik az adatmozgást
+    ExtSSD ===> Nextcloud
+    ExtSSD ===> Immich_Srv
+    NVMe ===> PVE_Shell
 
-    %% Internal Comms
-    WebUI -- "API" --> Ollama
-    Immich_Srv -- "API" --> Immich_ML
+    %% 4. CSOPORT: HARDVER GYORSÍTÁS (LILA - Purple) 🟣
+    iGPU ==> Immich_ML
+    iGPU ==> Ollama
 
-    %% Monitoring
-    Glances -. "Monitor" .-> PVE_Shell
-    Scrutiny -. "Read SMART" .-> ExtSSD
-    Scrutiny -. "Read SMART" .-> NVMe
-    Kuma -. "APIvailability Check" .-> Docker_Apps
+    %% 5. CSOPORT: MONITORING (SZÜRKE/DOTTED - Grey) ⚫
+    Glances -.-> PVE_Shell
+    Scrutiny -.-> ExtSSD
+    Scrutiny -.-> NVMe
+    Kuma -.-> Apps_General
+    
+    %% 6. CSOPORT: BELSŐ KOMMUNIKÁCIÓ (ZÖLD - Green) 🟢
+    WebUI --> Ollama
+    Immich_Srv --> Immich_ML
+
+    %% ==========================================================
+    %% SZÍNEZÉS (LinkStyle - Index alapú!)
+    %% ==========================================================
+    
+    %% User Connections (0,1) - Default Black
+    
+    %% Network Ingress (2,3,4,5,6) -> BLUE
+    linkStyle 2,3,4,5,6 stroke:#007ACC,stroke-width:2px;
+
+    %% Storage Bind Mounts (7,8,9) -> RED / ORANGE
+    linkStyle 7,8,9 stroke:#D9534F,stroke-width:4px;
+
+    %% Hardware Passthrough (10,11) -> PURPLE
 ```
 
 ## ⚙️ Hardware Specifications
