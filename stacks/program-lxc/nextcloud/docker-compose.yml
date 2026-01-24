@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  db:
+    container_name: nextcloud_db
+    image: postgres:16-alpine
+    restart: always
+    volumes:
+      - nextcloud_db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+
+  app:
+    container_name: nextcloud_app
+    image: nextcloud:latest
+    restart: always
+    ports:
+      - 8080:80
+    depends_on:
+      - db
+    volumes:
+      # Bind mount to the external SSD for data persistence
+      - /mnt/external_drive/nextcloud:/var/www/html
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      # Optional: Auto-configure admin user on first run
+      - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER}
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
+
+volumes:
+  nextcloud_db:

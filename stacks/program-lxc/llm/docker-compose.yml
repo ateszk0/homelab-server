@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  ollama:
+    container_name: ollama
+    image: ollama/ollama:latest
+    restart: always
+    ports:
+      - 11434:11434
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_ORIGINS=* # Allow access from other containers/network
+      - OLLAMA_HOST=0.0.0.0
+      # Optional: Keep the model loaded in memory for longer (e.g., 5m, 1h)
+      - OLLAMA_KEEP_ALIVE=5m
+    devices:
+      # Hardware Acceleration for Intel iGPU (QuickSync / OpenCL)
+      - /dev/dri:/dev/dri
+
+  open-webui:
+    container_name: open_webui
+    image: ghcr.io/open-webui/open-webui:main
+    restart: always
+    ports:
+      - 3000:8080
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      # Security: Fixes session persistence across restarts
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
+    volumes:
+      - open_webui_data:/app/backend/data
+    depends_on:
+      - ollama
+
+volumes:
+  ollama_data:
+  open_webui_data:

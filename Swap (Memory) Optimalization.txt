@@ -1,0 +1,9 @@
+# 1. Jelenlegi érték ellenőrzése
+cat /proc/sys/vm/swappiness
+
+# 2. Beállítás szerkesztése
+nano /etc/sysctl.conf
+# A végére írd be: vm.swappiness=5
+
+# 3. Érvényesítés újraindítás nélkül
+sysctl -p

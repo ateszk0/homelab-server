@@ -1,0 +1,8 @@
+# Konténerek indítása (háttérben)
+docker compose up -d
+
+# Újraindítás frissítéssel
+docker compose up -d --force-recreate
+
+# Logok nézése (hibakereséshez)
+docker logs -f immich_server

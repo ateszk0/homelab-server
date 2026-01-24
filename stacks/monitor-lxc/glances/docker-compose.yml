@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  glances:
+    image: nicolargo/glances:latest-full
+    container_name: glances
+    restart: unless-stopped
+    # PID Host mode allows Glances to see processes of the host machine,
+    # not just inside the container.
+    pid: host
+    environment:
+      - GLANCES_OPT=-w # Start web server mode
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro # Monitor Docker stats
+    ports:
+      - "61208:61208"

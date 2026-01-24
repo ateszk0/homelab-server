@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  scrutiny:
+    image: ghcr.io/analogj/scrutiny:master-omnibus
+    container_name: scrutiny
+    restart: unless-stopped
+    # "High Privileges" required to read raw SMART data from hardware
+    cap_add:
+      - SYS_RAWIO
+    devices:
+      # Passthrough physical devices from Proxmox Host
+      - /dev/sda:/dev/sda           # External 1TB Samsung SSD
+      - /dev/nvme0n1:/dev/nvme0n1   # Internal NVMe Storage
+      - /dev/nvme0:/dev/nvme0       # Internal NVMe Controller
+    ports:
+      - "8081:8080" # Web UI (Mapped to 8081 to avoid conflict with Nextcloud if you are using it in the same lxc or vm)
+      - "8086:8086" # InfluxDB
+    volumes:
+      # Configuration (Contains 'collector.yaml' fix for USB drives)
+      - ./config:/opt/scrutiny/config
+      # Persistent data
+      - scrutiny_data:/opt/scrutiny/influxdb
+
+volumes:
+  scrutiny_data:

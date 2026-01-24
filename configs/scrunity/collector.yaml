@@ -1,0 +1,14 @@
+# ------------------------------------------------------------------
+# SCRUTINY COLLECTOR CONFIG
+# Fix for USB-connected SSDs not reporting SMART data correctly.
+# ------------------------------------------------------------------
+
+version: 1
+devices:
+  # Manually define the USB drive to force SAT (SCSI / ATA Translation)
+  - device: /dev/sda
+    type: 'sat'
+  
+  # NVMe drives usually work automatically, but can be defined explicitly
+  - device: /dev/nvme0n1
+    type: 'nvme'

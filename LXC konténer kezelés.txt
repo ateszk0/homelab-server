@@ -1,0 +1,14 @@
+# Konténer indítása / leállítása / belépés
+pct start 102
+pct stop 102
+pct enter 102
+
+# Automatikus indítás beállítása (Bootkor induljon)
+pct set 102 -onboot 1
+
+# Magok számának növelése (pl. 2 magra)
+pct set 102 --cores 2
+
+# Konfig fájl szerkesztése (Itt adtuk hozzá a lemezeket)
+nano /etc/pve/lxc/102.conf
+# (A hozzáadott sorok lejjebb, a Config szekcióban)

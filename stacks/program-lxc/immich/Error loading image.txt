@@ -1,0 +1,2 @@
+# A külső SSD-n lévő fájlok tulajdonosának átállítása a Docker userre (1000)
+chown -R 1000:1000 /mnt/external/immich

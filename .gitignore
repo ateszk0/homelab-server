@@ -1,0 +1,8 @@
+# .gitignore
+.env
+*.key
+*.pem
+id_rsa
+proxmox_backups/
+/mnt/
+.DS_Store
