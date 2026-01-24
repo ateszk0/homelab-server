@@ -115,7 +115,8 @@ graph TD
     Glances -. "Monitor" .-> PVE_Shell
     Scrutiny -. "Read SMART" .-> ExtSSD
     Scrutiny -. "Read SMART" .-> NVMe
-    Kuma -. "APIvailability Check" .-> Docker_Apps```
+    Kuma -. "APIvailability Check" .-> Docker_Apps
+```
 
 ## ⚙️ Hardware Specifications
 
