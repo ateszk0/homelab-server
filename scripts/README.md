@@ -2,7 +2,7 @@
 
 ```bash
 
-chmod +x scripts/\*.sh
+chmod +x {YOUR-SCRIPT}.sh
 
 ```
 
