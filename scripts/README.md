@@ -1,4 +1,4 @@
-\*\*Make  sure  to  make  the  scripts  executable  before  running:\*\*
+## Make  sure  to  make  the  scripts  executable  before  running:
 
 ```bash
 
