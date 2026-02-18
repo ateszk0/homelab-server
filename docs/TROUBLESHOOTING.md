@@ -2,7 +2,7 @@
 
 
 
-\# 🔧 Troubleshooting \& Maintenance
+# 🔧 Troubleshooting & Maintenance
 
 
 
@@ -10,19 +10,19 @@ Common issues and their solutions for my Homelab server.
 
 
 
-\## 1. Storage \& I/O Issues
+## 1. Storage & I/O Issues
 
 If the system feels slow or services are crashing.
 
 
 
-\*\*Check Disk I/O Latency:\*\*
+**Check Disk I/O Latency:**
 
 
 
 ```bash
 
-\# Requires iotop
+# Requires iotop
 
 iotop
 
@@ -30,27 +30,27 @@ iotop
 
 
 
-\*\*Check Mount Points:\*\* Verify if the 1TB SSD is visible to the Host and Container.
+**Check Mount Points:** Verify if the 1TB SSD is visible to the Host and Container.
 
 ```bash
 
-\# On Host
+# On Host
 
 df -h /mnt/ssd
 
-\# Inside Docker Container
+# Inside Docker Container
 
-ls -R /mnt/external\_drive
+ls -R /mnt/external_drive
 
 ```
 
 
 
-\## 2. Power Management
+## 2. Power Management
 
 
 
-\*\*Check Battery Status (Host):\*\*
+**Check Battery Status (Host):**
 
 
 
@@ -58,15 +58,15 @@ ls -R /mnt/external\_drive
 
 ```bash
 
-cat /sys/class/power\_supply/BAT1/capacity   # Percentage
+cat /sys/class/power_supply/BAT1/capacity   # Percentage
 
-cat /sys/class/power\_supply/BAT1/status     # Charging/Discharging
+cat /sys/class/power_supply/BAT1/status     # Charging/Discharging
 
 ```
 
 
 
-\*\*Check TLP Statistics:\*\*
+**Check TLP Statistics:**
 
 
 
@@ -78,31 +78,31 @@ tlp-stat -b
 
 
 
-\## 3. Docker Diagnostics
+## 3. Docker Diagnostics
 
 
 
-\*\*View Container Logs:\*\*
+**View Container Logs:**
 
 
 
 ```bash
 
-docker logs -f immich\_server
+docker logs -f immich_server
 
-docker logs -f nextcloud\_app
+docker logs -f nextcloud_app
 
 ```
 
 
 
-\*\*Check GPU Usage (Intel QuickSync):\*\*
+**Check GPU Usage (Intel QuickSync):**
 
 
 
 ```bash
 
-intel\_gpu\_top
+intel_gpu_top
 
 ```
 
